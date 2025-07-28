@@ -711,6 +711,16 @@ function checkCipher() {
 
 function startSpeechRecognition() {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        // Stop any existing recognition first
+        if (speechRecognition) {
+            try {
+                speechRecognition.stop();
+                speechRecognition = null;
+            } catch (e) {
+                // Ignore errors when stopping
+            }
+        }
+        
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         speechRecognition = new SpeechRecognition();
         
@@ -722,10 +732,12 @@ function startSpeechRecognition() {
         const speechResult = document.getElementById('speech-result');
         const startButton = document.getElementById('start-listening');
         
+        // Reset UI state
         micStatus.textContent = 'Mic: LISTENING... 🎙️';
         micStatus.style.color = '#ff0080';
         startButton.textContent = '🎙️ LISTENING...';
         startButton.disabled = true;
+        startButton.classList.add('listening');
         
         speechRecognition.onresult = function(event) {
             const transcript = event.results[0][0].transcript.toLowerCase();
@@ -741,49 +753,101 @@ function startSpeechRecognition() {
                 playErrorSound();
             }
             
-            micStatus.textContent = 'Mic: OFF';
-            micStatus.style.color = '#ffffff';
-            startButton.textContent = '🎙️ PHIR SE TRY KARO';
-            startButton.disabled = false;
+            // Reset button state
+            resetMicButton();
         };
         
         speechRecognition.onerror = function(event) {
-            speechResult.innerHTML = '<span style="color: #ff0080;">🎙️ Mic access nahi mila. Manual me "Happy Birthday" type karo!</span>';
-            micStatus.textContent = 'Mic: ERROR';
-            startButton.textContent = '🎙️ MIC START KARO';
-            startButton.disabled = false;
+            console.log('Speech recognition error:', event.error);
             
-            // Add manual input as fallback
-            const manualInput = document.createElement('input');
-            manualInput.type = 'text';
-            manualInput.placeholder = 'Type "Happy Birthday" here...';
-            manualInput.style.margin = '10px';
-            manualInput.style.padding = '10px';
-            manualInput.style.borderRadius = '8px';
-            manualInput.style.border = '2px solid #00ff41';
-            manualInput.style.background = 'rgba(0,0,0,0.8)';
-            manualInput.style.color = '#00ff41';
+            if (event.error === 'not-allowed') {
+                speechResult.innerHTML = '<span style="color: #ff0080;">🎙️ Microphone permission denied. Please allow mic access!</span>';
+            } else if (event.error === 'no-speech') {
+                speechResult.innerHTML = '<span style="color: #ff0080;">🎙️ Koi awaaz nahi suni. Phir try karo!</span>';
+            } else {
+                speechResult.innerHTML = '<span style="color: #ff0080;">🎙️ Mic issue hai. Manual me "Happy Birthday" type karo!</span>';
+                addManualInput();
+            }
             
-            manualInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    const value = manualInput.value.toLowerCase();
-                    if (value.includes('happy birthday')) {
-                        speechRecognized = true;
-                        speechResult.innerHTML = '<span style="color: #00ff41;">✅ Perfect! Ab candle pe tap karo!</span>';
-                        document.getElementById('wish-instruction').textContent = '🔥 Great! Ab candle tap karo power-up activate karne ke liye!';
-                        manualInput.style.display = 'none';
-                        playSuccessSound();
-                    }
-                }
-            });
-            
-            document.querySelector('.mic-controls').appendChild(manualInput);
+            // Reset button state
+            resetMicButton();
         };
         
-        speechRecognition.start();
+        speechRecognition.onend = function() {
+            // Always reset button when recognition ends
+            resetMicButton();
+        };
+        
+        // Start recognition with error handling
+        try {
+            speechRecognition.start();
+        } catch (error) {
+            console.log('Error starting speech recognition:', error);
+            speechResult.innerHTML = '<span style="color: #ff0080;">🎙️ Mic start nahi hua. Button phir se press karo!</span>';
+            resetMicButton();
+        }
     } else {
         alert('Speech recognition is not supported in this browser. Please use Chrome or Edge.');
     }
+}
+
+function resetMicButton() {
+    const micStatus = document.getElementById('mic-status');
+    const startButton = document.getElementById('start-listening');
+    
+    micStatus.textContent = 'Mic: OFF';
+    micStatus.style.color = '#ffffff';
+    startButton.textContent = '🎙️ PHIR SE TRY KARO';
+    startButton.disabled = false;
+    startButton.classList.remove('listening');
+    
+    // Clean up recognition instance
+    if (speechRecognition) {
+        try {
+            speechRecognition = null;
+        } catch (e) {
+            // Ignore cleanup errors
+        }
+    }
+}
+
+function addManualInput() {
+    // Check if manual input already exists
+    if (document.querySelector('#manual-input')) {
+        return;
+    }
+    
+    const manualInput = document.createElement('input');
+    manualInput.type = 'text';
+    manualInput.id = 'manual-input';
+    manualInput.placeholder = 'Type "Happy Birthday" here...';
+    manualInput.style.margin = '10px';
+    manualInput.style.padding = '10px';
+    manualInput.style.borderRadius = '8px';
+    manualInput.style.border = '2px solid #00ff41';
+    manualInput.style.background = 'rgba(0,0,0,0.8)';
+    manualInput.style.color = '#00ff41';
+    manualInput.style.display = 'block';
+    manualInput.style.width = '100%';
+    manualInput.style.maxWidth = '300px';
+    
+    manualInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            const value = manualInput.value.toLowerCase();
+            if (value.includes('happy birthday')) {
+                speechRecognized = true;
+                document.getElementById('speech-result').innerHTML = '<span style="color: #00ff41;">✅ Perfect! Ab candle pe tap karo!</span>';
+                document.getElementById('wish-instruction').textContent = '🔥 Great! Ab candle tap karo power-up activate karne ke liye!';
+                manualInput.style.display = 'none';
+                playSuccessSound();
+            } else {
+                manualInput.style.borderColor = '#ff0080';
+                manualInput.placeholder = 'Please type "Happy Birthday"';
+            }
+        }
+    });
+    
+    document.querySelector('.mic-controls').appendChild(manualInput);
 }
 
 function blowOutCandle() {
