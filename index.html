@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔥 Epic Birthday Quest 🔥</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎂</text></svg>">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto:wght@300;400;600;700&family=Fredoka+One&family=Bungee&family=Righteous&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="cake-loader">
+            <div class="cake-base"></div>
+            <div class="candle"></div>
+            <div class="flame"></div>
+        </div>
+        <p>Loading your special day...</p>
+    </div>
+
+    <!-- Main Content -->
+    <div id="main-content" class="hidden">
+        <!-- Welcome Screen -->
+        <section id="welcome" class="screen active">
+            <div class="cyber-grid"></div>
+            <div class="neon-particles"></div>
+            <h1 class="birthday-title">
+                ⚡ LEVEL UP ⚡<br>
+                <span class="sub-title">BIRTHDAY MODE ACTIVATE HO GAYA</span>
+            </h1>
+            <p class="welcome-text">Ready hai kya is epic birthday challenge ke liye, bhai?</p>
+            <button id="start-adventure" class="adventure-btn pulse" onclick="nextScreen()">
+                🚀 GAME SHURU KARO
+            </button>
+            <div class="matrix-rain"></div>
+        </section>
+
+        <!-- Name Input Screen -->
+        <section id="name-input" class="screen">
+            <div class="hacker-terminal">
+                <div class="terminal-header">
+                    <span class="terminal-dot red"></span>
+                    <span class="terminal-dot yellow"></span>
+                    <span class="terminal-dot green"></span>
+                </div>
+                <div class="terminal-content">
+                    <p class="terminal-line">$ ./birthday_protocol.exe</p>
+                    <p class="terminal-line">Birthday sequence initialize ho raha hai...</p>
+                    <p class="terminal-line">Player ka username enter karo:</p>
+                </div>
+            </div>
+            <div class="input-container">
+                <input type="text" id="birthday-name" placeholder="Apna naam yahan enter karo..." maxlength="20">
+                <button id="submit-name" class="adventure-btn">ACCESS GRANTED 🎯</button>
+            </div>
+            <div class="hint">💻 Tumhara naam sirf is session ke liye encrypt ho jayega</div>
+        </section>
+
+        <!-- Age Guessing Game -->
+        <section id="age-game" class="screen">
+            <h2>🧠 NEURAL NETWORK ANALYSIS</h2>
+            <div class="age-guessing">
+                <p class="age-question">Apni age ke baare mein soch... Mera AI scan kar raha hai... 🤖</p>
+                <div class="scanning-animation">
+                    <div class="scan-line"></div>
+                </div>
+                <div class="age-steps">
+                    <button class="age-btn" data-step="1">🔍 BRAINWAVES ANALYZE KAR RAHA HUN...</button>
+                </div>
+                <div id="age-result" class="age-result hidden"></div>
+            </div>
+        </section>
+
+        <!-- Treasure Hunt -->
+        <section id="treasure-hunt" class="screen">
+            <h2>🏴‍☠️ CRYPTO VAULT RAID</h2>
+            <p class="mission-brief">Digital vaults ko hack karo aur rare NFTs dhundo! 💎</p>
+            <div class="hack-status">
+                <div class="hack-timer">Time: <span id="hack-time">60</span>s</div>
+                <div class="hack-attempts">Attempts: <span id="hack-attempts">0</span>/10</div>
+            </div>
+            <div class="treasure-grid">
+                <div class="treasure-item" data-treasure="1" data-security="low">🔒</div>
+                <div class="treasure-item" data-treasure="2" data-security="medium">🔐</div>
+                <div class="treasure-item" data-treasure="3" data-security="high">💎</div>
+                <div class="treasure-item" data-treasure="4" data-security="low">🔒</div>
+                <div class="treasure-item" data-treasure="5" data-security="medium">🔐</div>
+                <div class="treasure-item" data-treasure="6" data-security="low">🔒</div>
+                <div class="treasure-item" data-treasure="7" data-security="medium">🔐</div>
+                <div class="treasure-item" data-treasure="8" data-security="low">🔒</div>
+                <div class="treasure-item" data-treasure="9" data-security="high">💎</div>
+            </div>
+            <p class="treasure-hint">2 rare NFTs dhundo! Security levels: 🔒 = Easy, 🔐 = Medium, 💎 = Jackpot!</p>
+            <div id="treasure-progress" class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+            <div class="hack-message" id="hack-message"></div>
+        </section>
+
+        <!-- Birthday Quiz -->
+        <section id="quiz" class="screen">
+            <h2>🎮 KNOWLEDGE BOSS BATTLE</h2>
+            <div class="quiz-container">
+                <div id="quiz-question" class="quiz-question"></div>
+                <div id="quiz-options" class="quiz-options"></div>
+                <div id="quiz-result" class="quiz-result"></div>
+                <button id="next-question" class="adventure-btn hidden">NEXT ROUND 🎯</button>
+            </div>
+            <div class="quiz-score">XP MILA: <span id="score">0</span>/5</div>
+        </section>
+
+        <!-- Memory Game -->
+        <section id="memory-game" class="screen">
+            <h2>🧩 NEURAL SYNC CHALLENGE</h2>
+            <p class="neural-interface">3x3 matrix mein symbols ko match karo! Bomb se bach ke rehna!</p>
+            <div class="memory-timer">Time: <span id="memory-time">45</span>s</div>
+            <div class="memory-board" id="memory-board">
+                <div class="memory-card" data-card="gaming">
+                    <div class="card-front">🎮</div>
+                    <div class="card-back">❓</div>
+                </div>
+                <div class="memory-card" data-card="fire">
+                    <div class="card-front">🔥</div>
+                    <div class="card-back">❓</div>
+                </div>
+                <div class="memory-card" data-card="crown">
+                    <div class="card-front">�</div>
+                    <div class="card-back">❓</div>
+                </div>
+                <div class="memory-card" data-card="rocket">
+                    <div class="card-front">�</div>
+                    <div class="card-back">❓</div>
+                </div>
+                <div class="memory-card" data-card="bomb" data-bomb-clicks="0">
+                    <div class="card-front">�</div>
+                    <div class="card-back">❓</div>
+                </div>
+                <div class="memory-card" data-card="lightning">
+                    <div class="card-front">⚡</div>
+                    <div class="card-back">❓</div>
+                </div>
+                <div class="memory-card" data-card="gaming">
+                    <div class="card-front">🎮</div>
+                    <div class="card-back">❓</div>
+                </div>
+                <div class="memory-card" data-card="fire">
+                    <div class="card-front">🔥</div>
+                    <div class="card-back">❓</div>
+                </div>
+                <div class="memory-card" data-card="crown">
+                    <div class="card-front">👑</div>
+                    <div class="card-back">❓</div>
+                </div>
+            </div>
+            <div class="memory-stats">
+                <div>MATCHES: <span id="matches">0</span>/4</div>
+                <div>ATTEMPTS: <span id="moves">0</span></div>
+                <div>BOMB HITS: <span id="bomb-hits">0</span>/2</div>
+            </div>
+        </section>
+
+        <!-- Secret Message -->
+        <section id="secret-message" class="screen">
+            <h2>🔐 CRYPTOGRAPHY CHALLENGE</h2>
+            <div class="cipher-container">
+                <p class="cipher-hint">Is encrypted message ko decode karo (A=1, B=2, C=3...)</p>
+                <div class="cipher-text">
+                    8-1-16-16-25 &nbsp; 2-9-18-20-8-4-1-25!
+                </div>
+                <input type="text" id="cipher-input" placeholder="Decoded message yahan enter karo...">
+                <button id="check-cipher" class="adventure-btn">DECRYPT KARO 🔓</button>
+                <div id="cipher-result" class="cipher-result"></div>
+            </div>
+        </section>
+
+        <!-- Birthday Wishes -->
+        <section id="wishes" class="screen">
+            <h2>⚡ POWER-UP RITUAL</h2>
+            <div class="ritual-instructions">
+                <p>🎙️ Microphone on karo aur zor se bolo: "HAPPY BIRTHDAY!"</p>
+                <p>Phir candle pe tap karo power-up activate karne ke liye!</p>
+            </div>
+            <div class="mic-controls">
+                <button id="start-listening" class="mic-button">🎙️ MIC SHURU KARO</button>
+                <div id="mic-status" class="mic-status">Mic: OFF</div>
+                <div id="speech-result" class="speech-result"></div>
+            </div>
+            <div class="candle-container">
+                <div class="birthday-cake">
+                    <div class="cake-layer cake-bottom"></div>
+                    <div class="cake-layer cake-top"></div>
+                    <div class="candle-group">
+                        <div class="candle-stick"></div>
+                        <div class="flame" id="candle-flame"></div>
+                    </div>
+                </div>
+            </div>
+            <p class="wish-instruction" id="wish-instruction">💨 Pehle "HAPPY BIRTHDAY" bolo, phir candle tap karo!</p>
+            <div id="wish-message" class="wish-message hidden">
+                <h3>⚡ POWER-UP ACTIVATED! ⚡</h3>
+                <p>Tumhara next level wait kar raha hai... Dominate karne ke liye ready ho jao!</p>
+            </div>
+        </section>
+
+        <!-- Final Celebration -->
+        <section id="celebration" class="screen">
+            <!-- Disco Lights Background -->
+            <div class="disco-lights">
+                <div class="light-beam beam-1"></div>
+                <div class="light-beam beam-2"></div>
+                <div class="light-beam beam-3"></div>
+                <div class="light-beam beam-4"></div>
+                <div class="light-beam beam-5"></div>
+                <div class="light-beam beam-6"></div>
+                <div class="spotlight spotlight-1"></div>
+                <div class="spotlight spotlight-2"></div>
+                <div class="spotlight spotlight-3"></div>
+            </div>
+            
+            <!-- Fireworks Animation -->
+            <div class="fireworks-container">
+                <div class="firework firework-1"></div>
+                <div class="firework firework-2"></div>
+                <div class="firework firework-3"></div>
+                <div class="firework firework-4"></div>
+            </div>
+            
+            <div class="celebration-content">
+                <h1 class="final-title pulse-glow">🏆 MISSION COMPLETE 🏆</h1>
+                <div id="personal-message" class="personal-message"></div>
+                
+                <!-- More Dancing Characters Area -->
+                <div class="party-zone">
+                    <div class="mega-dance-text">
+                        <span class="mega-letter">P</span>
+                        <span class="mega-letter">A</span>
+                        <span class="mega-letter">R</span>
+                        <span class="mega-letter">T</span>
+                        <span class="mega-letter">Y</span>
+                        <span class="mega-letter"> </span>
+                        <span class="mega-letter">T</span>
+                        <span class="mega-letter">I</span>
+                        <span class="mega-letter">M</span>
+                        <span class="mega-letter">E</span>
+                        <span class="mega-letter">!</span>
+                    </div>
+                </div>
+                
+                <!-- Sound Control Buttons -->
+                <div class="sound-controls">
+                    <button id="play-birthday-song" class="sound-btn">🎵 BIRTHDAY SONG BAJAO</button>
+                    <button id="play-applause" class="sound-btn">👏 TAALIYAN BAJAO</button>
+                    <button id="play-cheers" class="sound-btn">🥳 CELEBRATION SOUNDS</button>
+                </div>
+                
+                <div class="achievement-badges">
+                    <div class="badge bounce-in">🕵️ VAULT RAIDER</div>
+                    <div class="badge bounce-in">🧠 KNOWLEDGE MASTER</div>
+                    <div class="badge bounce-in">🧩 NEURAL SYNC CHAMPION</div>
+                    <div class="badge bounce-in">🔐 CRYPTO BREAKER</div>
+                    <div class="badge bounce-in">⚡ POWER-UP ACTIVATED</div>
+                </div>
+                
+                <!-- Enhanced Dancing Text -->
+                <div class="dancing-text">
+                    <span class="dance-letter">J</span>
+                    <span class="dance-letter">A</span>
+                    <span class="dance-letter">N</span>
+                    <span class="dance-letter">M</span>
+                    <span class="dance-letter">D</span>
+                    <span class="dance-letter">I</span>
+                    <span class="dance-letter">N</span>
+                    <span class="dance-letter"> </span>
+                    <span class="dance-letter">M</span>
+                    <span class="dance-letter">U</span>
+                    <span class="dance-letter">B</span>
+                    <span class="dance-letter">A</span>
+                    <span class="dance-letter">R</span>
+                    <span class="dance-letter">A</span>
+                    <span class="dance-letter">K</span>
+                    <span class="dance-letter">!</span>
+                </div>
+                
+                <button id="restart-adventure" class="adventure-btn glow-button">
+                    🔄 NAYI GAME SHURU KARO
+                </button>
+                <div class="party-emojis floating-emojis">
+                    🔥⚡🎉💎🚀👑🎊🎈💰🔥
+                </div>
+            </div>
+        </section>
+
+        <!-- Navigation -->
+        <div class="navigation">
+            <div class="progress-dots"></div>
+        </div>
+    </div>
+
+    <!-- Background Music -->
+    <audio id="background-music" loop>
+        <source src="https://www.soundjay.com/misc/sounds/bell-ringing-05.wav" type="audio/wav">
+    </audio>
+
+    <!-- Happy Birthday MP3 Song -->
+    <audio id="happy-bday-song" preload="auto">
+        <source src="Happy Bday.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Celebration Audio -->
+    <audio id="birthday-song" preload="auto">
+        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmNcFByT2+/JeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmQcBj" type="audio/wav">
+    </audio>
+    <audio id="applause-sound" preload="auto">
+        <source src="data:audio/wav;base64,UklGRjIEAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQEAADzT5fJ4/y8f2Daf8zL8P8dff8APf8Bf8z9+v8gAP8AJ/8XAG8B/wZa/hsBG8z9+v8gAP8AJ/8XAG8B/wZa/hsBG8z9+v8gAP8AJ/8XAG8B/wZa/hsBG8z9+v8gAP8AJ/8XAG8B/wZa/hsBG8z9+v8gAP8AJ/8XAG8B/wZa/hsBG8z9+v8gAP8AJ/8XAG8B/wZa/hsBG8z9+v8gAP8AJ/8XAG8B/wZa/hsBG8z9+v8gAP8AJ/8XAG8B/wZa/hsBG8z9+v8gAP8AJ/8XAG8B/wZa/hsBG8z9+v8gAP8AJ/8XAG8B/wZa/hsBG8z9+v8gAP8AJ/8XAG8B/wZa/hsBG8z9+v8gAP8AJ/8XAG8B/wZa/hsBG8z9+v8gAP8AJ/8XAG8B" type="audio/wav">
+    </audio>
+    <audio id="cheers-sound" preload="auto">
+        <source src="data:audio/wav;base64,UklGRlIFAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQ4FAADg4t2oWJVkzowlBAI3FAJXVAFJ7wJOcQKN5QJCsAK/lAK3ewKrbQKjZAKcXQKWVwKSUwKOTwKLTAKISwKGSQKETgKC0AKCXQJ/YAKG7AKKfgKOqwKStwKXoAKaoQKe6wKjhAKmKwKqeQKthgKyOAK0/AK4WgK7RwK+gwLBNwLEJwLHZQLKQQPkCQQa8AQk9AQsE" type="audio/wav">
+    </audio>
+
+    <script src="script.js"></script>
+</body>
+</html>
