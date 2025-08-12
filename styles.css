@@ -292,6 +292,24 @@ body {
     pointer-events: auto;
 }
 
+/* Pointer hint for tutorial guidance */
+.pointer-hint {
+    position: absolute;
+    left: 50%;
+    top: -12px;
+    transform: translate(-50%, -100%);
+    font-size: 20px;
+    filter: drop-shadow(0 0 6px rgba(255,255,255,0.8));
+    animation: pointerBounce 1s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 2;
+}
+
+@keyframes pointerBounce {
+    0%, 100% { transform: translate(-50%, -110%); opacity: 1; }
+    50% { transform: translate(-50%, -90%); opacity: 0.9; }
+}
+
 .adventure-btn:hover {
     transform: translateY(-2px);
     box-shadow: 
@@ -540,7 +558,7 @@ body {
     }
 }
 
-/* Treasure Hunt */
+/* Glitch Smash (replacement for Treasure Hunt) */
 #treasure-hunt {
     background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
 }
@@ -563,11 +581,12 @@ body {
 .hack-status {
     display: flex;
     justify-content: space-around;
+    gap: 8px;
     margin-bottom: 20px;
     font-family: 'Orbitron', monospace;
 }
 
-.hack-timer, .hack-attempts {
+.hack-timer, .hack-attempts, .hack-misses {
     background: rgba(0, 0, 0, 0.8);
     border: 1px solid #00ff41;
     padding: 8px 12px;
@@ -584,7 +603,7 @@ body {
     text-align: center;
 }
 
-.treasure-grid {
+.glitch-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 15px;
@@ -592,57 +611,44 @@ body {
     margin: 20px 0;
 }
 
-.treasure-item {
+.glitch-hole {
     width: 80px;
     height: 80px;
     background: linear-gradient(45deg, #1a1a2e, #16213e);
     border: 2px solid #00ff41;
     border-radius: 15px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 30px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 
+    position: relative;
+    overflow: hidden;
+    box-shadow:
         0 0 20px rgba(0, 255, 65, 0.3),
         inset 0 0 20px rgba(0, 255, 65, 0.05);
+    cursor: pointer;
 }
 
-.treasure-item[data-security="medium"] {
-    border-color: #ffaa00;
-    box-shadow: 
-        0 0 20px rgba(255, 170, 0, 0.3),
-        inset 0 0 20px rgba(255, 170, 0, 0.05);
+.glitch-hole::after {
+    content: '';
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    left: 50%;
+    top: 100%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, #ff0080 0%, #8000ff 70%);
+    border-radius: 50%;
+    filter: drop-shadow(0 0 10px rgba(255, 0, 128, 0.7));
+    transition: top 0.15s ease;
 }
 
-.treasure-item[data-security="high"] {
-    border-color: #ff0080;
-    box-shadow: 
-        0 0 20px rgba(255, 0, 128, 0.3),
-        inset 0 0 20px rgba(255, 0, 128, 0.05);
+.glitch-hole.active::after {
+    top: 50%;
+    animation: glitch-wiggle 0.9s ease-in-out infinite;
 }
 
-.treasure-item:hover {
-    transform: scale(1.05);
-    box-shadow: 
-        0 0 30px rgba(0, 255, 65, 0.6),
-        inset 0 0 30px rgba(0, 255, 65, 0.1);
-}
-
-.treasure-item.opened {
-    background: linear-gradient(45deg, #ff0080, #ff8c00);
-    border-color: #ff0080;
-    animation: vault-hacked 0.5s ease;
-    box-shadow: 
-        0 0 30px rgba(255, 0, 128, 0.6),
-        inset 0 0 20px rgba(255, 0, 128, 0.1);
-}
-
-@keyframes vault-hacked {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.2) rotate(5deg); }
-    100% { transform: scale(1) rotate(0deg); }
+@keyframes glitch-wiggle {
+    0%, 100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+    25% { transform: translate(-50%, -55%) scale(1.05) rotate(5deg); }
+    50% { transform: translate(-50%, -50%) scale(0.95) rotate(-5deg); }
+    75% { transform: translate(-50%, -45%) scale(1.1) rotate(3deg); }
 }
 
 .treasure-hint {
@@ -665,7 +671,7 @@ body {
     height: 100%;
     background: linear-gradient(45deg, #00ff41, #00d4aa);
     width: 0%;
-    transition: width 0.5s ease;
+    transition: width 0.3s ease;
     box-shadow: 0 0 10px rgba(0, 255, 65, 0.8);
 }
 
