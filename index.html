@@ -29,7 +29,7 @@
                 ⚡ LEVEL UP ⚡<br>
                 <span class="sub-title">BIRTHDAY MODE ACTIVATE HO GAYA</span>
             </h1>
-            <p class="welcome-text">Ready hai kya is epic birthday challenge ke liye, bhai?</p>
+            <p class="welcome-text">Ready hai kya is epic birthday challenge ke liye, bro?</p>
             <button id="start-adventure" class="adventure-btn pulse" onclick="nextScreen()">
                 🚀 GAME SHURU KARO
             </button>
@@ -69,29 +69,31 @@
                     <button class="age-btn" data-step="1">🔍 BRAINWAVES ANALYZE KAR RAHA HUN...</button>
                 </div>
                 <div id="age-result" class="age-result hidden"></div>
+                <button id="age-next" class="adventure-btn hidden">▶️ NEXT</button>
             </div>
         </section>
 
-        <!-- Treasure Hunt -->
+        <!-- Glitch Smash (replaces Treasure Hunt) -->
         <section id="treasure-hunt" class="screen">
-            <h2>🏴‍☠️ CRYPTO VAULT RAID</h2>
-            <p class="mission-brief">Digital vaults ko hack karo aur rare NFTs dhundo! 💎</p>
+            <h2>🕹️ GLITCH SMASH</h2>
+            <p class="mission-brief">Bug ko tap karke system clean karo! Target ko hit karo time khatam hone se pehle.</p>
             <div class="hack-status">
-                <div class="hack-timer">Time: <span id="hack-time">60</span>s</div>
-                <div class="hack-attempts">Attempts: <span id="hack-attempts">0</span>/10</div>
+                <div class="hack-timer">Time: <span id="hack-time">45</span>s</div>
+                <div class="hack-attempts">Hits: <span id="hack-attempts">0</span>/<span id="hits-target">8</span></div>
+                <div class="hack-misses">Misses: <span id="misses">0</span>/5</div>
             </div>
-            <div class="treasure-grid">
-                <div class="treasure-item" data-treasure="1" data-security="low">🔒</div>
-                <div class="treasure-item" data-treasure="2" data-security="medium">🔐</div>
-                <div class="treasure-item" data-treasure="3" data-security="high">💎</div>
-                <div class="treasure-item" data-treasure="4" data-security="low">🔒</div>
-                <div class="treasure-item" data-treasure="5" data-security="medium">🔐</div>
-                <div class="treasure-item" data-treasure="6" data-security="low">🔒</div>
-                <div class="treasure-item" data-treasure="7" data-security="medium">🔐</div>
-                <div class="treasure-item" data-treasure="8" data-security="low">🔒</div>
-                <div class="treasure-item" data-treasure="9" data-security="high">💎</div>
+            <div class="glitch-grid" id="glitch-grid">
+                <div class="glitch-hole" data-index="0"></div>
+                <div class="glitch-hole" data-index="1"></div>
+                <div class="glitch-hole" data-index="2"></div>
+                <div class="glitch-hole" data-index="3"></div>
+                <div class="glitch-hole" data-index="4"></div>
+                <div class="glitch-hole" data-index="5"></div>
+                <div class="glitch-hole" data-index="6"></div>
+                <div class="glitch-hole" data-index="7"></div>
+                <div class="glitch-hole" data-index="8"></div>
             </div>
-            <p class="treasure-hint">2 rare NFTs dhundo! Security levels: 🔒 = Easy, 🔐 = Medium, 💎 = Jackpot!</p>
+            <p class="treasure-hint">Tip: Sirf active bug pe tap karo! Misses 5 se zyada hue to game reset ho jayega.</p>
             <div id="treasure-progress" class="progress-bar">
                 <div class="progress-fill"></div>
             </div>
