@@ -3,18 +3,22 @@ let currentScreen = 0;
 let userName = '';
 let quizScore = 0;
 let currentQuizQuestion = 0;
-let treasuresFound = 0;
+let treasuresFound = 0; // repurposed as hits for Glitch Smash
 let memoryMatches = 0;
 let memoryMoves = 0;
 let flippedCards = [];
 let soundEnabled = true;
-let hackTimer = 30;
-let hackAttempts = 0;
+let hackTimer = 45; // Glitch Smash round time (increased from 30s to 45s)
+let hackAttempts = 0; // counts successful hits
+let glitchMisses = 0; // counts misses
+let glitchActiveIndex = -1;
+let glitchInterval;
 let memoryTimer = 15;
 let memoryTimerInterval;
 let hackTimerInterval;
 let speechRecognition;
 let speechRecognized = false;
+let wishesCompleted = false; // track if the candle activity is completed
 
 const screens = [
     'welcome', 'name-input', 'age-game', 'treasure-hunt', 
@@ -142,14 +146,10 @@ function setupEventListeners() {
     // Age game
     setupAgeGame();
 
-    // Treasure hunt
-    setupTreasureHunt();
-
     // Quiz
     setupQuiz();
 
-    // Memory game
-    setupMemoryGame();
+    // Memory game is initialized when its screen becomes active
 
     // Secret message
     document.getElementById('check-cipher').addEventListener('click', checkCipher);
@@ -163,6 +163,10 @@ function setupEventListeners() {
 
     // Final celebration
     document.getElementById('restart-adventure').addEventListener('click', restartAdventure);
+
+    // Initial hint on welcome CTA
+    const startBtn = document.getElementById('start-adventure');
+    if (startBtn) showPointerHint(startBtn);
 }
 
 function createProgressDots() {
@@ -188,6 +192,8 @@ function nextScreen() {
     console.log('nextScreen called, currentScreen:', currentScreen, 'screens.length:', screens.length);
     if (currentScreen < screens.length - 1) {
         const currentScreenEl = document.getElementById(screens[currentScreen]);
+    // Stop any active game timers when leaving a screen
+    stopActiveGameTimers();
         currentScreen++;
         const nextScreenEl = document.getElementById(screens[currentScreen]);
 
@@ -197,8 +203,14 @@ function nextScreen() {
         currentScreenEl.classList.add('prev');
         
         setTimeout(() => {
+            // Clear any inline transforms/opacities that could persist from back navigation
+            nextScreenEl.style.transform = '';
+            nextScreenEl.style.opacity = '';
+            nextScreenEl.classList.remove('prev');
             nextScreenEl.classList.add('active');
             updateProgressDots();
+            // Initialize screen-specific logic after activation
+            onScreenEnter(currentScreen);
         }, 100);
     }
 }
@@ -217,8 +229,12 @@ function prevScreen() {
         
         setTimeout(() => {
             prevScreenEl.classList.remove('prev');
+            // Clear any inline transforms/opacities before showing previous screen
+            prevScreenEl.style.transform = '';
+            prevScreenEl.style.opacity = '';
             prevScreenEl.classList.add('active');
             updateProgressDots();
+            onScreenEnter(currentScreen);
         }, 100);
     }
 }
@@ -241,6 +257,7 @@ function setupAgeGame() {
     let step = 1;
     const ageSteps = document.querySelector('.age-steps');
     const ageResult = document.getElementById('age-result');
+    const ageNextBtn = document.getElementById('age-next');
 
     ageSteps.addEventListener('click', (e) => {
         if (e.target.classList.contains('age-btn')) {
@@ -264,10 +281,17 @@ function setupAgeGame() {
                         `;
                         ageResult.classList.remove('hidden');
                         playSuccessSound();
-                        
+                        // Show delayed NEXT button after 5 seconds
                         setTimeout(() => {
-                            nextScreen();
-                        }, 10000); // Increased delay to 10 seconds for reading
+                            if (ageNextBtn) {
+                                ageNextBtn.classList.remove('hidden');
+                                ageNextBtn.onclick = () => {
+                                    ageNextBtn.classList.add('hidden');
+                                    nextScreen();
+                                };
+                                showPointerHint(ageNextBtn);
+                            }
+                        }, 5000);
                     }, 1500);
                 }
             }
@@ -275,114 +299,160 @@ function setupAgeGame() {
     });
 }
 
-function setupTreasureHunt() {
-    const treasureItems = document.querySelectorAll('.treasure-item');
-    const progressFill = document.querySelector('.progress-fill');
-    const hackTimeEl = document.getElementById('hack-time');
-    const hackAttemptsEl = document.getElementById('hack-attempts');
-    const hackMessageEl = document.getElementById('hack-message');
-    
-    // Reset timer to 60 seconds
-    hackTimer = 60;
-    hackTimeEl.textContent = hackTimer;
-    
-    // Start hack timer
-    hackTimerInterval = setInterval(() => {
-        hackTimer--;
-        hackTimeEl.textContent = hackTimer;
-        
-        if (hackTimer <= 15) {
-            hackTimeEl.style.color = '#ff0080';
-            hackTimeEl.style.animation = 'pulse 0.5s infinite';
-        }
-        
-        if (hackTimer <= 0) {
-            clearInterval(hackTimerInterval);
-            hackMessageEl.innerHTML = '<span style="color: #ff0080;">⏰ TIME UP! Mission failed... Try again!</span>';
-            setTimeout(() => {
-                resetTreasureHunt();
-            }, 2000);
-        }
-    }, 1000);
-    
-    treasureItems.forEach(item => {
-        item.addEventListener('click', () => {
-            if (!item.classList.contains('opened') && hackTimer > 0) {
-                hackAttempts++;
-                hackAttemptsEl.textContent = hackAttempts;
-                
-                if (hackAttempts >= 10) {
-                    clearInterval(hackTimerInterval);
-                    hackMessageEl.innerHTML = '<span style="color: #ff0080;">💥 Too many attempts! Security breach detected!</span>';
-                    setTimeout(() => {
-                        resetTreasureHunt();
-                    }, 2000);
-                    return;
-                }
-                
-                item.classList.add('opened');
-                const security = item.dataset.security;
-                const treasureType = item.dataset.treasure;
-                
-                if (security === 'high') {
-                    treasuresFound++;
-                    item.textContent = '🏆';
-                    playSuccessSound();
-                    hackMessageEl.innerHTML = `<span style="color: #00ff41;">💎 JACKPOT! Rare NFT #${treasureType} hacked successfully!</span>`;
-                    
-                    const progress = (treasuresFound / 2) * 100;
-                    progressFill.style.width = progress + '%';
-                    
-                    if (treasuresFound === 2) {
-                        clearInterval(hackTimerInterval);
-                        setTimeout(() => {
-                            showMessage('🔥 MISSION SUCCESSFUL! Saare rare NFTs hack ho gaye!');
-                            setTimeout(() => nextScreen(), 2000);
-                        }, 500);
-                    }
-                } else if (security === 'medium') {
-                    item.textContent = '💰';
-                    hackMessageEl.innerHTML = '<span style="color: #ffaa00;">� Medium security cracked! Good progress, keep searching!</span>';
-                    playClickSound();
-                } else {
-                    item.textContent = '�';
-                    hackMessageEl.innerHTML = '<span style="color: #00d4aa;">� Low security vault accessed! Keep searching for NFTs...</span>';
-                    playClickSound();
-                }
-            }
-        });
-    });
+// Tutorial pointer hint utility
+function showPointerHint(targetEl) {
+    if (!targetEl) return;
+    // Avoid duplicates
+    if (targetEl.querySelector('.pointer-hint')) return;
+    const hint = document.createElement('div');
+    hint.className = 'pointer-hint';
+    hint.textContent = '👉';
+    if (getComputedStyle(targetEl).position === 'static') {
+        targetEl.style.position = 'relative';
+    }
+    targetEl.appendChild(hint);
+    const remove = () => { if (hint && hint.parentNode) hint.parentNode.removeChild(hint); };
+    targetEl.addEventListener('click', remove, { once: true });
+    setTimeout(remove, 8000);
 }
 
-function resetTreasureHunt() {
-    // Reset variables
-    treasuresFound = 0;
-    hackTimer = 60;
+function setupGlitchSmash() {
+    const grid = document.getElementById('glitch-grid');
+    const holes = grid ? grid.querySelectorAll('.glitch-hole') : [];
+    // If grid not present (screen not active), do nothing
+    if (!grid || !document.getElementById('treasure-hunt').classList.contains('active')) return;
+    const progressFill = document.querySelector('.progress-fill');
+    const hackTimeEl = document.getElementById('hack-time');
+    const attemptsEl = document.getElementById('hack-attempts');
+    const hitsTargetEl = document.getElementById('hits-target');
+    const missesEl = document.getElementById('misses');
+    const messageEl = document.getElementById('hack-message');
+
+    const hitsTarget = 8; // goal
+    hitsTargetEl && (hitsTargetEl.textContent = String(hitsTarget));
+
+    // Reset state
+    treasuresFound = 0; // hits
     hackAttempts = 0;
-    
-    // Reset UI
-    document.getElementById('hack-time').textContent = hackTimer;
-    document.getElementById('hack-time').style.color = '#00ff41';
-    document.getElementById('hack-time').style.animation = 'none';
-    document.getElementById('hack-attempts').textContent = hackAttempts;
-    document.getElementById('hack-message').innerHTML = '';
-    document.querySelector('.progress-fill').style.width = '0%';
-    
-    // Reset treasure items
-    document.querySelectorAll('.treasure-item').forEach(item => {
-        item.classList.remove('opened');
-        const security = item.dataset.security;
-        if (security === 'high') {
-            item.textContent = '�';
-        } else if (security === 'medium') {
-            item.textContent = '🔐';
-        } else {
-            item.textContent = '🔒';
-        }
+    glitchMisses = 0;
+    glitchActiveIndex = -1;
+    attemptsEl && (attemptsEl.textContent = '0');
+    missesEl && (missesEl.textContent = '0');
+    progressFill && (progressFill.style.width = '0%');
+    messageEl && (messageEl.innerHTML = '');
+
+    // Reset timer to 45s
+    hackTimer = 45;
+    hackTimeEl && (hackTimeEl.textContent = hackTimer);
+    hackTimeEl && (hackTimeEl.style.color = '#00ff41');
+    hackTimeEl && (hackTimeEl.style.animation = 'none');
+
+    // Clear previous intervals if any
+    if (hackTimerInterval) clearInterval(hackTimerInterval);
+    if (glitchInterval) clearInterval(glitchInterval);
+
+    // Accept input only while target is active
+    let acceptingInput = false;
+
+    // Wire hole clicks
+    holes.forEach((hole, index) => {
+        hole.onclick = () => {
+            if (hackTimer <= 0) return;
+            // Only count during valid window to avoid late clicks being punished
+            if (!acceptingInput) return;
+
+            if (hole.classList.contains('active')) {
+                // HIT
+                acceptingInput = false;
+                hackAttempts++;
+                treasuresFound = hackAttempts;
+                attemptsEl && (attemptsEl.textContent = String(hackAttempts));
+                playSuccessSound();
+                // Clear active visual
+                hole.classList.remove('active');
+                glitchActiveIndex = -1;
+                // Progress update
+                const progress = Math.min(100, (hackAttempts / hitsTarget) * 100);
+                progressFill && (progressFill.style.width = progress + '%');
+                if (hackAttempts >= hitsTarget) {
+                    endGlitchSmash(true);
+                }
+            } else {
+                // MISS (clicked wrong hole during active window)
+                acceptingInput = false;
+                glitchMisses++;
+                missesEl && (missesEl.textContent = String(glitchMisses));
+                playErrorSound();
+                // Deactivate any hole if wrong clicked
+                holes.forEach(h => h.classList.remove('active'));
+                glitchActiveIndex = -1;
+                if (glitchMisses >= 5) {
+                    endGlitchSmash(false, '⚠️ Too many misses!');
+                }
+            }
+        };
     });
-    
-    // Restart timer
-    setupTreasureHunt();
+
+    // Appear cycle for glitches
+    const appear = () => {
+        // clear previous active
+        holes.forEach(h => h.classList.remove('active'));
+        acceptingInput = false;
+        // pick new index
+        glitchActiveIndex = Math.floor(Math.random() * holes.length);
+        const hole = holes[glitchActiveIndex];
+        if (hole) {
+            hole.classList.add('active');
+            acceptingInput = true;
+            // auto-miss if not clicked within window
+        setTimeout(() => {
+                if (hole.classList.contains('active') && hackTimer > 0) {
+                    // miss due to timeout
+                    hole.classList.remove('active');
+                    glitchActiveIndex = -1;
+                    if (acceptingInput) {
+                        acceptingInput = false;
+                        glitchMisses++;
+                        missesEl && (missesEl.textContent = String(glitchMisses));
+                    }
+                    if (glitchMisses >= 5) {
+                        endGlitchSmash(false, '⚠️ Too many misses!');
+                    }
+                }
+        }, 1300); // 1.3s reaction window (increased from 0.9s)
+        }
+    };
+
+    // Start cycles
+    glitchInterval = setInterval(appear, 1500); // slower spawn: every 1.5s (was 1s)
+    appear();
+
+    // Start timer
+    hackTimerInterval = setInterval(() => {
+        hackTimer--;
+        hackTimeEl && (hackTimeEl.textContent = hackTimer);
+        if (hackTimer <= 10) {
+            hackTimeEl && (hackTimeEl.style.color = '#ff0080');
+            hackTimeEl && (hackTimeEl.style.animation = 'pulse 0.5s infinite');
+        }
+        if (hackTimer <= 0) {
+            endGlitchSmash(hackAttempts >= hitsTarget);
+        }
+    }, 1000);
+
+    function endGlitchSmash(success, reason = '') {
+        if (hackTimerInterval) clearInterval(hackTimerInterval);
+        if (glitchInterval) clearInterval(glitchInterval);
+        holes.forEach(h => h.classList.remove('active'));
+        glitchActiveIndex = -1;
+        if (success) {
+            messageEl && (messageEl.innerHTML = '<span style="color:#00ff41;">🧹 SYSTEM CLEAN! Glitches defeated!</span>');
+            setTimeout(() => nextScreen(), 1200);
+        } else {
+            messageEl && (messageEl.innerHTML = `<span style="color:#ff0080;">⏳ Game over. ${reason} Try again!</span>`);
+            setTimeout(() => setupGlitchSmash(), 1500);
+        }
+    }
 }
 
 function setupQuiz() {
@@ -748,6 +818,9 @@ function startSpeechRecognition() {
                 speechResult.innerHTML = '<span style="color: #00ff41;">✅ Perfect! Ab candle pe tap karo!</span>';
                 document.getElementById('wish-instruction').textContent = '🔥 Great! Ab candle tap karo power-up activate karne ke liye!';
                 playSuccessSound();
+                // Hint on candle after recognition
+                const flameEl = document.getElementById('candle-flame');
+                showPointerHint(flameEl);
             } else {
                 speechResult.innerHTML = '<span style="color: #ff0080;">❌ "Happy Birthday" bolne ki koshish karo!</span>';
                 playErrorSound();
@@ -870,6 +943,8 @@ function blowOutCandle() {
     
     // Start playing Happy Birthday MP3 song after power-up ritual completes
     startHappyBirthdaySong();
+    // Mark wishes activity as completed
+    wishesCompleted = true;
     
     setTimeout(() => {
         nextScreen();
@@ -894,6 +969,40 @@ function createSmokeEffect() {
         
         setTimeout(() => smoke.remove(), 2000);
     }
+}
+
+// Reset the wishes (candle) activity so user can redo it
+function resetWishesScreen() {
+    // Stop song and remove indicator if present
+    const happyBdaySong = document.getElementById('happy-bday-song');
+    if (happyBdaySong) {
+        try { happyBdaySong.pause(); happyBdaySong.currentTime = 0; } catch {}
+    }
+    const indicator = document.getElementById('song-indicator');
+    if (indicator) indicator.remove();
+
+    // Reset UI texts and states
+    const micStatus = document.getElementById('mic-status');
+    const startButton = document.getElementById('start-listening');
+    const speechResult = document.getElementById('speech-result');
+    const wishInstruction = document.getElementById('wish-instruction');
+    if (micStatus) { micStatus.textContent = 'Mic: OFF'; micStatus.style.color = '#ffffff'; }
+    if (startButton) { startButton.textContent = '🎙️ PHIR SE TRY KARO'; startButton.disabled = false; startButton.classList.remove('listening'); }
+    if (speechResult) { speechResult.textContent = ''; }
+    if (wishInstruction) { wishInstruction.textContent = '🎙️ Pehle "Happy Birthday" bolo, phir candle pe tap karo!'; }
+
+    // Reset recognition and completion flags
+    speechRecognized = false;
+    wishesCompleted = false;
+
+    // Reset candle visuals
+    const flame = document.getElementById('candle-flame');
+    const wishMessage = document.getElementById('wish-message');
+    if (flame) {
+        flame.classList.remove('blown-out');
+        flame.style.animation = 'flicker 0.5s infinite alternate';
+    }
+    if (wishMessage) { wishMessage.classList.add('hidden'); }
 }
 
 function startHappyBirthdaySong() {
@@ -984,6 +1093,43 @@ function showFinalCelebration() {
     // Don't auto-play synthesized song since MP3 should be playing
     // The MP3 song from power-up ritual continues playing here
     console.log('Final celebration screen loaded - MP3 should be playing');
+    // Ensure the celebration screen element is fully visible
+    const celebrationEl = document.getElementById('celebration');
+    if (celebrationEl) {
+        celebrationEl.classList.remove('prev');
+        celebrationEl.style.opacity = '';
+        celebrationEl.style.transform = '';
+    }
+
+    // Add a Back to Candle button (avoid duplicates)
+    if (!document.getElementById('back-to-wishes')) {
+        const backBtn = document.createElement('button');
+        backBtn.id = 'back-to-wishes';
+        backBtn.textContent = '⬅️ Back to Candle';
+        backBtn.style.cssText = `
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            z-index: 10001;
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: 2px solid #00ff41;
+            background: rgba(0,0,0,0.6);
+            color: #00ff41;
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 255, 65, 0.2);
+        `;
+        backBtn.addEventListener('click', () => {
+            backBtn.remove();
+            if (typeof prevScreen === 'function') {
+                prevScreen(); // celebration -> wishes
+                setTimeout(() => resetWishesScreen(), 150);
+            }
+        });
+        document.body.appendChild(backBtn);
+    }
 }
 
 function setupCelebrationSounds() {
@@ -1360,12 +1506,17 @@ function restartAdventure() {
     document.getElementById('moves').textContent = '0';
     document.getElementById('cipher-input').value = '';
     
-    // Reset treasure hunt
-    document.querySelectorAll('.treasure-item').forEach(item => {
-        item.classList.remove('opened');
-        item.textContent = item.dataset.treasure === '3' || item.dataset.treasure === '9' ? '💎' : '📦';
-    });
-    document.querySelector('.progress-fill').style.width = '0%';
+    // Reset Glitch Smash
+    const progress = document.querySelector('.progress-fill');
+    if (progress) progress.style.width = '0%';
+    const msg = document.getElementById('hack-message');
+    if (msg) msg.textContent = '';
+    const timeEl = document.getElementById('hack-time');
+    if (timeEl) { timeEl.textContent = '45'; timeEl.style.color = '#00ff41'; timeEl.style.animation = 'none'; }
+    const hitEl = document.getElementById('hack-attempts');
+    if (hitEl) hitEl.textContent = '0';
+    const missEl = document.getElementById('misses');
+    if (missEl) missEl.textContent = '0';
     
     // Reset memory game
     document.querySelectorAll('.memory-card').forEach(card => {
@@ -1374,9 +1525,15 @@ function restartAdventure() {
         card.dataset.bombClicks = '0';
     });
     
-    // Clear memory game timers
+    // Clear timers
     if (memoryTimerInterval) {
         clearInterval(memoryTimerInterval);
+    }
+    if (hackTimerInterval) {
+        clearInterval(hackTimerInterval);
+    }
+    if (glitchInterval) {
+        clearInterval(glitchInterval);
     }
     
     // Stop Happy Birthday MP3 song if playing
@@ -1385,6 +1542,9 @@ function restartAdventure() {
         happyBdaySong.pause();
         happyBdaySong.currentTime = 0;
     }
+    // Remove back-to-wishes button if present
+    const backBtn = document.getElementById('back-to-wishes');
+    if (backBtn) backBtn.remove();
     
     // Remove song indicator if present
     const songIndicator = document.getElementById('song-indicator');
@@ -1400,6 +1560,7 @@ function restartAdventure() {
     
     // Reset speech recognition
     speechRecognized = false;
+    wishesCompleted = false;
     
     // Reset candle
     const flame = document.getElementById('candle-flame');
@@ -1416,7 +1577,7 @@ function restartAdventure() {
     document.getElementById('welcome').classList.add('active');
     
     updateProgressDots();
-    setupMemoryGame(); // Re-shuffle cards
+    // Do not start games yet; they will start when screens are visited
 }
 
 function createConfetti() {
@@ -1554,9 +1715,62 @@ document.head.appendChild(smokeStyle);
 // Update celebration when reaching final screen
 const originalNextScreen = nextScreen;
 nextScreen = function() {
+    // Block navigation from wishes until completed
+    if (screens[currentScreen] === 'wishes' && !wishesCompleted) {
+        showMessage('Complete the mic + candle activity before continuing!');
+        return;
+    }
     if (currentScreen === screens.length - 2) {
         // About to show celebration screen
         setTimeout(showFinalCelebration, 100);
     }
     originalNextScreen();
+    // After navigation, show contextual hints
+    setTimeout(() => {
+        const currentId = screens[currentScreen];
+        if (currentId === 'name-input') {
+            const submit = document.getElementById('submit-name');
+            showPointerHint(submit);
+        } else if (currentId === 'age-game') {
+            const analyzeBtn = document.querySelector('.age-btn');
+            showPointerHint(analyzeBtn);
+        } else if (currentId === 'secret-message') {
+            const decryptBtn = document.getElementById('check-cipher');
+            showPointerHint(decryptBtn);
+        } else if (currentId === 'wishes') {
+            const micBtn = document.getElementById('start-listening');
+            showPointerHint(micBtn);
+        }
+    }, 200);
 };
+
+// Initialize screen-specific features only when screen becomes active
+function onScreenEnter(index) {
+    const id = screens[index];
+    if (id === 'treasure-hunt') {
+        setupGlitchSmash();
+    } else if (id === 'memory-game') {
+        setupMemoryGame();
+    }
+}
+
+// Clear any running game timers/intervals when navigating away
+function stopActiveGameTimers() {
+    if (memoryTimerInterval) {
+        clearInterval(memoryTimerInterval);
+        memoryTimerInterval = null;
+    }
+    if (hackTimerInterval) {
+        clearInterval(hackTimerInterval);
+        hackTimerInterval = null;
+    }
+    if (glitchInterval) {
+        clearInterval(glitchInterval);
+        glitchInterval = null;
+    }
+    // Clean up any floating UI from celebration when navigating away
+    const backBtn = document.getElementById('back-to-wishes');
+    if (backBtn && screens[currentScreen] !== 'celebration') {
+        backBtn.remove();
+    }
+}
