@@ -1,4 +1,4 @@
-// Global Variables
+// ===== Globals & State =====
 let currentScreen = 0;
 let userName = '';
 let quizScore = 0;
@@ -19,6 +19,7 @@ let hackTimerInterval;
 let speechRecognition;
 let speechRecognized = false;
 let wishesCompleted = false; // track if the candle activity is completed
+let isNavigating = false; // prevent rapid multiple navigations
 
 const screens = [
     'welcome', 'name-input', 'age-game', 'treasure-hunt', 
@@ -53,7 +54,7 @@ const quizQuestions = [
     }
 ];
 
-// Initialize the app
+// ===== App Init =====
 document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
 });
@@ -77,12 +78,10 @@ function initializeApp() {
     createConfetti();
 }
 
+// ===== Visual Effects =====
 function initializeEffects() {
-    // Create matrix rain effect
     createMatrixRain();
-    // Create neon particles
     createNeonParticles();
-    // Start dancing characters for celebration screen
     startDancingCharacters();
 }
 
@@ -126,9 +125,23 @@ function createNeonParticles() {
     }
 }
 
+// ===== Event Listeners =====
 function setupEventListeners() {
-    // Welcome screen - Button uses inline onclick, no need for additional listener
     console.log('Event listeners setup complete');
+
+    // Global Enter key guard: allow only in specific text inputs; block elsewhere
+    document.addEventListener('keydown', function(e) {
+        if (e.key !== 'Enter') return;
+        const t = e.target;
+        const isTextField = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+        const allowedIds = ['birthday-name', 'cipher-input', 'manual-input'];
+        const isAllowedTarget = isTextField && allowedIds.includes(t.id);
+        // If navigating or not an allowed text field, swallow Enter to avoid accidental button clicks
+        if (isNavigating || !isAllowedTarget) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    }, true);
 
     // Name input
     const submitBtn = document.getElementById('submit-name');
@@ -138,8 +151,12 @@ function setupEventListeners() {
         submitBtn.addEventListener('click', handleNameSubmit);
     }
     if (nameInput) {
-        nameInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handleNameSubmit();
+        nameInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                handleNameSubmit();
+            }
         });
     }
 
@@ -154,7 +171,7 @@ function setupEventListeners() {
     // Secret message
     document.getElementById('check-cipher').addEventListener('click', checkCipher);
     document.getElementById('cipher-input').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') checkCipher();
+    if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); checkCipher(); }
     });
 
     // Birthday wishes
@@ -188,9 +205,12 @@ function updateProgressDots() {
     });
 }
 
+// ===== Navigation & Screens =====
 function nextScreen() {
     console.log('nextScreen called, currentScreen:', currentScreen, 'screens.length:', screens.length);
+    if (isNavigating) return;
     if (currentScreen < screens.length - 1) {
+        isNavigating = true;
         const currentScreenEl = document.getElementById(screens[currentScreen]);
     // Stop any active game timers when leaving a screen
     stopActiveGameTimers();
@@ -211,6 +231,8 @@ function nextScreen() {
             updateProgressDots();
             // Initialize screen-specific logic after activation
             onScreenEnter(currentScreen);
+            // Release the navigation lock after animation completes
+            setTimeout(() => { isNavigating = false; }, 600);
         }, 100);
     }
 }
@@ -219,7 +241,9 @@ function nextScreen() {
 window.nextScreen = nextScreen;
 
 function prevScreen() {
+    if (isNavigating) return;
     if (currentScreen > 0) {
+        isNavigating = true;
         const currentScreenEl = document.getElementById(screens[currentScreen]);
         currentScreen--;
         const prevScreenEl = document.getElementById(screens[currentScreen]);
@@ -235,6 +259,8 @@ function prevScreen() {
             prevScreenEl.classList.add('active');
             updateProgressDots();
             onScreenEnter(currentScreen);
+            // release lock after transition
+            setTimeout(() => { isNavigating = false; }, 600);
         }, 100);
     }
 }
@@ -244,6 +270,10 @@ function handleNameSubmit() {
     userName = nameInput.value.trim();
     
     if (userName) {
+    // Prevent repeated submissions via Enter
+    const submitBtn = document.getElementById('submit-name');
+    if (submitBtn) submitBtn.disabled = true;
+    if (nameInput) nameInput.disabled = true;
         playSuccessSound();
         nextScreen();
     } else {
@@ -316,6 +346,7 @@ function showPointerHint(targetEl) {
     setTimeout(remove, 8000);
 }
 
+// ===== Game: Glitch Smash =====
 function setupGlitchSmash() {
     const grid = document.getElementById('glitch-grid');
     const holes = grid ? grid.querySelectorAll('.glitch-hole') : [];
@@ -455,6 +486,7 @@ function setupGlitchSmash() {
     }
 }
 
+// ===== Game: Quiz =====
 function setupQuiz() {
     showQuizQuestion();
 }
@@ -541,6 +573,7 @@ function finishQuiz() {
     }, 3000);
 }
 
+// ===== Game: Memory =====
 function setupMemoryGame() {
     const memoryBoard = document.getElementById('memory-board');
     const memoryTimeEl = document.getElementById('memory-time');
@@ -762,6 +795,7 @@ function checkMemoryMatch() {
     flippedCards = [];
 }
 
+// ===== Challenge: Secret Message =====
 function checkCipher() {
     const input = document.getElementById('cipher-input').value.toLowerCase().trim();
     const result = document.getElementById('cipher-result');
@@ -779,6 +813,7 @@ function checkCipher() {
     }
 }
 
+// ===== Wishes (Mic + Candle) =====
 function startSpeechRecognition() {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
         // Stop any existing recognition first
@@ -906,6 +941,8 @@ function addManualInput() {
     
     manualInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
+            e.preventDefault();
+            e.stopPropagation();
             const value = manualInput.value.toLowerCase();
             if (value.includes('happy birthday')) {
                 speechRecognized = true;
@@ -1132,6 +1169,7 @@ function showFinalCelebration() {
     }
 }
 
+// ===== Audio: Celebration SFX =====
 function setupCelebrationSounds() {
     const playBirthdayBtn = document.getElementById('play-birthday-song');
     const playApplauseBtn = document.getElementById('play-applause');
@@ -1220,7 +1258,6 @@ function playSynthesizedBirthdaySong() {
 }
 
 function playApplause() {
-    // Create applause sound effect
     if (!window.AudioContext && !window.webkitAudioContext) {
         showCelebrationMessage("👏 Wah! Zabardast performance! 👏");
         return;
@@ -1228,7 +1265,7 @@ function playApplause() {
     
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     
-    // Create white noise for applause effect
+    // White noise-based applause
     for (let i = 0; i < 10; i++) {
         const bufferSize = audioContext.sampleRate * 0.3;
         const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
@@ -1249,9 +1286,8 @@ function playApplause() {
         whiteNoise.connect(filter);
         filter.connect(gainNode);
         gainNode.connect(audioContext.destination);
-        
-        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime + i * 0.1);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + i * 0.1 + 0.3);
+    gainNode.gain.setValueAtTime(0.5, audioContext.currentTime + i * 0.1);
+    gainNode.gain.exponentialRampToValueAtTime(0.05, audioContext.currentTime + i * 0.1 + 0.3);
         
         whiteNoise.start(audioContext.currentTime + i * 0.1);
         whiteNoise.stop(audioContext.currentTime + i * 0.1 + 0.3);
@@ -1261,10 +1297,49 @@ function playApplause() {
 }
 
 function playCheers() {
-    // Create celebration cheer sounds
+
+    const cheersEl = document.getElementById('cheers-sound');
+    let played = false;
+    if (cheersEl) {
+        try {
+            if (!cheersEl._boostedCtx) {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const src = ctx.createMediaElementSource(cheersEl);
+                const gain = ctx.createGain();
+                src.connect(gain);
+                gain.connect(ctx.destination);
+                cheersEl._boostedCtx = ctx;
+                cheersEl._boostedGain = gain;
+            }
+            cheersEl._boostedGain.gain.value = 8.0;
+            if (cheersEl._boostedCtx.state === 'suspended') {
+                cheersEl._boostedCtx.resume().catch(() => {});
+            }
+            cheersEl.currentTime = 0;
+            cheersEl.play().then(() => { played = true; }).catch(() => {});
+        } catch (e) {
+            cheersEl.volume = 1.0;
+            try { cheersEl.currentTime = 0; cheersEl.play().then(() => { played = true; }); } catch {}
+        }
+    }
+    if (!played && (window.AudioContext || window.webkitAudioContext)) {
+        // Tiny synthesized cheer burst as a last resort
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(600, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.2);
+            gain.gain.setValueAtTime(0.2, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.25);
+        } catch {}
+    }
     showCelebrationMessage("🥳 Hip Hip Hooray! Birthday Superstar! 🥳");
-    
-    // Add extra visual effects
     triggerExtraFireworks();
 }
 
@@ -1501,6 +1576,9 @@ function restartAdventure() {
     
     // Reset UI elements
     document.getElementById('birthday-name').value = '';
+    document.getElementById('birthday-name').disabled = false;
+    const submitBtn = document.getElementById('submit-name');
+    if (submitBtn) submitBtn.disabled = false;
     document.getElementById('score').textContent = '0';
     document.getElementById('matches').textContent = '0';
     document.getElementById('moves').textContent = '0';
